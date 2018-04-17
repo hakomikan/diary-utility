@@ -9,14 +9,17 @@ function PadLeft(text: string, padChar: string, size: number): string {
 
 export function activate(context: vscode.ExtensionContext) {
 
-    function registerCommand(name: string, callback: (...args: any[]) => any) : void {
+    function registerCommand(name: string, callback: (...args: any[]) => any): void {
         context.subscriptions.push(
             vscode.commands.registerCommand(name, callback));
     }
 
-    function formatDate(date: Date) : string
-    {
-        return `${date.getFullYear()}-${PadLeft(`${date.getMonth()+1}`, "0", 2)}-${PadLeft(`${date.getDate()}`, "0", 2)}`;
+    function formatDate(date: Date): string {
+        return `${date.getFullYear()}-${PadLeft(`${date.getMonth() + 1}`, "0", 2)}-${PadLeft(`${date.getDate()}`, "0", 2)}`;
+    }
+
+    function formatDateTime(date: Date): string {
+        return `${date.getFullYear()}-${PadLeft(`${date.getMonth() + 1}`, "0", 2)}-${PadLeft(`${date.getDate()}`, "0", 2)} ${PadLeft(`${date.getHours()}`, "0", 2)}:${PadLeft(`${date.getMinutes()}`, "0", 2)}:${PadLeft(`${date.getSeconds()}`, "0", 2)}`;
     }
 
     registerCommand('extension.CreateTodayDiary', () => {
@@ -26,9 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
             var targetPath = join(workspace.uri.fsPath, `${formatedToday}.md`);
 
             exists(targetPath, existsFile => {
-                if(!existsFile) {
+                if (!existsFile) {
                     writeFile(targetPath, `# ${formatedToday}\n- `, err => { });
-                    vscode.window.showInformationMessage(`Create ${targetPath}!`);                        
+                    vscode.window.showInformationMessage(`Create ${targetPath}!`);
                 }
             });
 
@@ -37,6 +40,21 @@ export function activate(context: vscode.ExtensionContext) {
                     var docEnd = doc.positionAt(doc.getText().length);
                     editor.selection = new vscode.Selection(docEnd, docEnd);
                     editor.revealRange(new vscode.Range(docEnd, docEnd), vscode.TextEditorRevealType.InCenter);
+                });
+            });
+        }
+    });
+
+    registerCommand('extension.InsertDateTime', () => {
+        var editor = vscode.window.activeTextEditor;
+        if (editor) {
+            var selections = editor.selections;
+            var now = new Date(Date.now());
+
+            editor.edit(editBuilder => {
+                selections.forEach(selection => {
+                    editBuilder.replace(selection, "");
+                    editBuilder.insert(selection.active, formatDateTime(now));
                 });
             });
         }

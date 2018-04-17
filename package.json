@@ -11,7 +11,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.CreateTodayDiary"
+        "onCommand:extension.CreateTodayDiary",
+        "onCommand:extension.InsertDateTime"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -19,6 +20,10 @@
             {
                 "command": "extension.CreateTodayDiary",
                 "title": "Create a today diary"
+            },
+            {
+                "command": "extension.InsertDateTime",
+                "title": "Insert the datetime"
             }
         ]
     },
