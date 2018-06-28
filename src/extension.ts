@@ -11,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     function registerCommand(name: string, callback: (...args: any[]) => Promise<any>): void {
         context.subscriptions.push(
-            vscode.commands.registerCommand(name, (...args: any[]) => 
+            vscode.commands.registerCommand(name, (...args: any[]) =>
                 callback(...args).catch(err => console.error(err))
             )
         );
@@ -34,21 +34,19 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     function writeFile(path: string, data: string, enc: string = "utf-8"): Promise<void> {
-        return new Promise<void>( (resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             fs.writeFile(path, data, enc, err => {
-                if(err)
-                {
+                if (err) {
                     reject(err);
                 }
-                else
-                {
+                else {
                     resolve();
                 }
             })
         });
     }
 
-    function exists(path: string) : Promise<boolean> {
+    function exists(path: string): Promise<boolean> {
         return new Promise<boolean>(
             (resolve, reject) =>
                 fs.exists(path, exists => resolve(exists))
@@ -61,14 +59,12 @@ export function activate(context: vscode.ExtensionContext) {
             var formatedToday = formatDate(new Date(Date.now()));
             var targetPath = join(workspace.uri.fsPath, `${formatedToday}.md`);
 
-            if(!await exists(targetPath))
-            {
+            if (!await exists(targetPath)) {
                 await writeFile(targetPath, `# ${formatedToday}\n- `);
                 await openDocument(targetPath);
                 vscode.window.setStatusBarMessage(`Create ${targetPath}.`, 5000);
             }
-            else
-            {
+            else {
                 await openDocument(targetPath);
                 vscode.window.setStatusBarMessage(`Open ${targetPath}.`, 5000);
             }
