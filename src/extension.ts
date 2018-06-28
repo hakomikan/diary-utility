@@ -22,6 +22,16 @@ export function activate(context: vscode.ExtensionContext) {
         return `${date.getFullYear()}-${PadLeft(`${date.getMonth() + 1}`, "0", 2)}-${PadLeft(`${date.getDate()}`, "0", 2)} ${PadLeft(`${date.getHours()}`, "0", 2)}:${PadLeft(`${date.getMinutes()}`, "0", 2)}:${PadLeft(`${date.getSeconds()}`, "0", 2)}`;
     }
 
+    function openDocument(targetPath: string) {
+        return vscode.workspace.openTextDocument(targetPath).then(doc => {
+            vscode.window.showTextDocument(doc).then(editor => {
+                var docEnd = doc.positionAt(doc.getText().length);
+                editor.selection = new vscode.Selection(docEnd, docEnd);
+                editor.revealRange(new vscode.Range(docEnd, docEnd), vscode.TextEditorRevealType.InCenter);
+            });
+        });
+    }
+
     registerCommand('extension.CreateTodayDiary', () => {
         if (vscode.workspace.workspaceFolders !== undefined) {
             var workspace = vscode.workspace.workspaceFolders[0] as vscode.WorkspaceFolder;
@@ -30,17 +40,18 @@ export function activate(context: vscode.ExtensionContext) {
 
             exists(targetPath, existsFile => {
                 if (!existsFile) {
-                    writeFile(targetPath, `# ${formatedToday}\n- `, err => { });
-                    vscode.window.showInformationMessage(`Create ${targetPath}!`);
+                    writeFile(targetPath, `# ${formatedToday}\n- `, err => {
+                        openDocument(targetPath).then(() => {
+                            vscode.window.setStatusBarMessage(`Create ${targetPath}.`, 5000);
+                        });
+                     });
                 }
-            });
-
-            vscode.workspace.openTextDocument(targetPath).then(doc => {
-                vscode.window.showTextDocument(doc).then(editor => {
-                    var docEnd = doc.positionAt(doc.getText().length);
-                    editor.selection = new vscode.Selection(docEnd, docEnd);
-                    editor.revealRange(new vscode.Range(docEnd, docEnd), vscode.TextEditorRevealType.InCenter);
-                });
+                else
+                {
+                    openDocument(targetPath).then(() =>{
+                        vscode.window.setStatusBarMessage(`Open ${targetPath}.`, 5000);
+                    });
+                }
             });
         }
     });
