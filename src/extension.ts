@@ -1,6 +1,6 @@
 'use strict';
 import * as vscode from 'vscode';
-import { writeFile, exists } from 'fs';
+import * as fs from 'fs';
 import { join } from 'path';
 
 function PadLeft(text: string, padChar: string, size: number): string {
@@ -9,9 +9,12 @@ function PadLeft(text: string, padChar: string, size: number): string {
 
 export function activate(context: vscode.ExtensionContext) {
 
-    function registerCommand(name: string, callback: (...args: any[]) => any): void {
+    function registerCommand(name: string, callback: (...args: any[]) => Promise<any>): void {
         context.subscriptions.push(
-            vscode.commands.registerCommand(name, callback));
+            vscode.commands.registerCommand(name, (...args: any[]) => 
+                callback(...args).catch(err => console.error(err))
+            )
+        );
     }
 
     function formatDate(date: Date): string {
@@ -22,53 +25,69 @@ export function activate(context: vscode.ExtensionContext) {
         return `${date.getFullYear()}-${PadLeft(`${date.getMonth() + 1}`, "0", 2)}-${PadLeft(`${date.getDate()}`, "0", 2)} ${PadLeft(`${date.getHours()}`, "0", 2)}:${PadLeft(`${date.getMinutes()}`, "0", 2)}:${PadLeft(`${date.getSeconds()}`, "0", 2)}`;
     }
 
-    function openDocument(targetPath: string) {
-        return vscode.workspace.openTextDocument(targetPath).then(doc => {
-            vscode.window.showTextDocument(doc).then(editor => {
-                var docEnd = doc.positionAt(doc.getText().length);
-                editor.selection = new vscode.Selection(docEnd, docEnd);
-                editor.revealRange(new vscode.Range(docEnd, docEnd), vscode.TextEditorRevealType.InCenter);
-            });
+    async function openDocument(targetPath: string): Promise<void> {
+        var doc = await vscode.workspace.openTextDocument(targetPath);
+        var editor = await vscode.window.showTextDocument(doc);
+        var docEnd = doc.positionAt(doc.getText().length);
+        editor.selection = new vscode.Selection(docEnd, docEnd);
+        editor.revealRange(new vscode.Range(docEnd, docEnd), vscode.TextEditorRevealType.InCenter);
+    }
+
+    function writeFile(path: string, data: string, enc: string = "utf-8"): Promise<void> {
+        return new Promise<void>( (resolve, reject) => {
+            fs.writeFile(path, data, enc, err => {
+                if(err)
+                {
+                    reject(err);
+                }
+                else
+                {
+                    resolve();
+                }
+            })
         });
     }
 
-    registerCommand('extension.CreateTodayDiary', () => {
+    function exists(path: string) : Promise<boolean> {
+        return new Promise<boolean>(
+            (resolve, reject) =>
+                fs.exists(path, exists => resolve(exists))
+        );
+    }
+
+    registerCommand('extension.CreateTodayDiary', async () => {
         if (vscode.workspace.workspaceFolders !== undefined) {
             var workspace = vscode.workspace.workspaceFolders[0] as vscode.WorkspaceFolder;
             var formatedToday = formatDate(new Date(Date.now()));
             var targetPath = join(workspace.uri.fsPath, `${formatedToday}.md`);
 
-            exists(targetPath, existsFile => {
-                if (!existsFile) {
-                    writeFile(targetPath, `# ${formatedToday}\n- `, err => {
-                        openDocument(targetPath).then(() => {
-                            vscode.window.setStatusBarMessage(`Create ${targetPath}.`, 5000);
-                        });
-                     });
-                }
-                else
-                {
-                    openDocument(targetPath).then(() =>{
-                        vscode.window.setStatusBarMessage(`Open ${targetPath}.`, 5000);
-                    });
-                }
-            });
+            if(!await exists(targetPath))
+            {
+                await writeFile(targetPath, `# ${formatedToday}\n- `);
+                await openDocument(targetPath);
+                vscode.window.setStatusBarMessage(`Create ${targetPath}.`, 5000);
+            }
+            else
+            {
+                await openDocument(targetPath);
+                vscode.window.setStatusBarMessage(`Open ${targetPath}.`, 5000);
+            }
         }
     });
 
-    registerCommand('extension.InsertDateTime', () => {
+    registerCommand('extension.InsertDateTime', async () => {
         var editor = vscode.window.activeTextEditor;
-        if (editor) {
-            var selections = editor.selections;
-            var now = new Date(Date.now());
+        if (!editor) { return; }
 
-            editor.edit(editBuilder => {
-                selections.forEach(selection => {
-                    editBuilder.replace(selection, "");
-                    editBuilder.insert(selection.active, formatDateTime(now));
-                });
+        var selections = editor.selections;
+        var now = new Date(Date.now());
+
+        editor.edit(editBuilder => {
+            selections.forEach(selection => {
+                editBuilder.replace(selection, "");
+                editBuilder.insert(selection.active, formatDateTime(now));
             });
-        }
+        });
     });
 }
 
