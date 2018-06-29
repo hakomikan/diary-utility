@@ -20,15 +20,39 @@ export function activate(context: vscode.ExtensionContext) {
         var formatedToday = ut.formatDate(new Date(Date.now()));
         var targetPath = join(workspace.uri.fsPath, `${formatedToday}.md`);
 
-        if (!await ut.exists(targetPath)) {
-            await ut.writeFile(targetPath, `# ${formatedToday}\n- `);
-            vscode.window.setStatusBarMessage(`Create ${targetPath}.`, 5000);
+        await ut.openDocumentForcibly(targetPath, `# ${formatedToday}\n- `);
+    });
+
+    registerCommand('extension.CreateNamedDiary', async () => {
+        if (vscode.workspace.workspaceFolders === undefined) { return; }
+
+        var workspace = vscode.workspace.workspaceFolders[0] as vscode.WorkspaceFolder;
+        var formatedToday = ut.formatDate(new Date(Date.now()));
+        var name = await vscode.window.showInputBox();
+
+        var targetPath = join(workspace.uri.fsPath, `${formatedToday}-${name}.md`);
+
+        var editor = vscode.window.activeTextEditor;
+        if (editor && editor.selection) {
+            var selectedText = editor.document.getText(editor.selection.with());
+
+            editor.edit(editBuilder => {
+                if(editor){
+                    editBuilder.delete(editor.selection);
+                }
+            });
+
+            var newEditor = await ut.openDocumentForcibly(targetPath, `# ${formatedToday}\n- `);
+
+            newEditor.edit(editBuilder => {
+                var endPosition = newEditor.document.positionAt(newEditor.document.getText().length);
+                editBuilder.insert(endPosition, `\n${selectedText}`);
+            });
         }
         else {
-            vscode.window.setStatusBarMessage(`Open ${targetPath}.`, 5000);
+            await ut.openDocumentForcibly(targetPath, `# ${formatedToday}\n- `);
         }
 
-        await ut.openDocument(targetPath);
     });
 
     registerCommand('extension.InsertDateTime', async () => {
