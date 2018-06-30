@@ -2,7 +2,7 @@
     "name": "diary-utility",
     "displayName": "diary-utility",
     "description": "the diary utilities for me.",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "publisher": "taski",
     "engines": {
         "vscode": "^1.22.0"

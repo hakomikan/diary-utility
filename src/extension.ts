@@ -23,6 +23,16 @@ export function activate(context: vscode.ExtensionContext) {
         await ut.openDocumentForcibly(targetPath, `# ${formatedToday}\n- `);
     });
 
+    registerCommand('extension.CreateSubDirDiary', async () => {
+        if (vscode.workspace.workspaceFolders === undefined) { return; }
+
+        var workspace = vscode.workspace.workspaceFolders[0] as vscode.WorkspaceFolder;
+        var formatedToday = ut.formatDate(new Date(Date.now()));
+        var targetPath = join(workspace.uri.fsPath, `${formatedToday}.md`);
+
+        await ut.openDocumentForcibly(targetPath, `# ${formatedToday}\n- `);
+    });
+
     registerCommand('extension.CreateNamedDiary', async () => {
         if (vscode.workspace.workspaceFolders === undefined) { return; }
 
