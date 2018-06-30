@@ -8,7 +8,7 @@ export function activate(context: vscode.ExtensionContext) {
     function registerCommand(name: string, callback: (...args: any[]) => Promise<any>): void {
         context.subscriptions.push(
             vscode.commands.registerCommand(name, (...args: any[]) =>
-                callback(...args).catch(err => console.error(err))
+                callback(...args).catch(err => vscode.window.showErrorMessage(err))
             )
         );
     }
@@ -28,7 +28,12 @@ export function activate(context: vscode.ExtensionContext) {
 
         var workspace = vscode.workspace.workspaceFolders[0] as vscode.WorkspaceFolder;
         var formatedToday = ut.formatDate(new Date(Date.now()));
-        var targetPath = join(workspace.uri.fsPath, `${formatedToday}.md`);
+
+        var subDirs = await ut.enumerateSubDirectories(workspace.uri.fsPath);
+        var targetSubDir = await vscode.window.showQuickPick(subDirs);
+        if(!targetSubDir) { return; }
+
+        var targetPath = join(targetSubDir, `${formatedToday}.md`);
 
         await ut.openDocumentForcibly(targetPath, `# ${formatedToday}\n- `);
     });

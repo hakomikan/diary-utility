@@ -1,7 +1,7 @@
 'use strict';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-
+import { join } from 'path';
 
 export function PadLeft(text: string, padChar: string, size: number): string {
   return (String(padChar).repeat(size) + text).substr((size * -1), size);
@@ -22,6 +22,44 @@ export async function openDocument(targetPath: string): Promise<vscode.TextEdito
   editor.selection = new vscode.Selection(docEnd, docEnd);
   editor.revealRange(new vscode.Range(docEnd, docEnd), vscode.TextEditorRevealType.InCenter);
   return editor;
+}
+
+export interface PathAndStats
+{
+  path: string;
+  stats: fs.Stats;
+}
+
+export function lstatAsync(path: string) : Promise<PathAndStats>
+{
+  return new Promise<PathAndStats>((resolve, reject) => {
+    fs.lstat(path, (err, stats) => {
+      if(err) {
+        reject(err);
+      }
+      else {
+        resolve({ path, stats });
+      }
+    });
+  });
+}
+
+export function enumerateSubDirectories(rootDirectoryPaths: string) : Promise<string[]> {
+  return new Promise<string[]>((resolve, reject) => {
+    fs.readdir(rootDirectoryPaths, (err, files) => {
+      if(err){
+        reject(err);
+      }
+      else {
+        Promise.all(files.filter(file => !file.startsWith(".")).map(file => lstatAsync(join(rootDirectoryPaths, file)))).then( (values) => {
+          var directories = values.filter(file => file.stats.isDirectory() && !file.path.startsWith(".")).map(file => file.path);
+          resolve(directories);
+        }).catch(reason => {
+          reject(reason);
+        })
+      }
+    });  
+  });
 }
 
 export async function openDocumentForcibly(targetPath: string, firstContent: string): Promise<vscode.TextEditor> {

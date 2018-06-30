@@ -2,7 +2,7 @@
     "name": "diary-utility",
     "displayName": "diary-utility",
     "description": "the diary utilities for me.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "taski",
     "engines": {
         "vscode": "^1.22.0"
@@ -12,7 +12,8 @@
     ],
     "activationEvents": [
         "onCommand:extension.CreateTodayDiary",
-        "onCommand:extension.CreateNamedDiary",        
+        "onCommand:extension.CreateNamedDiary",
+        "onCommand:extension.CreateSubDirDiary",
         "onCommand:extension.InsertDateTime"
     ],
     "main": "./out/extension",
@@ -25,6 +26,10 @@
             {
                 "command": "extension.CreateNamedDiary",
                 "title": "Create a named today diary"
+            },
+            {
+                "command": "extension.CreateSubDirDiary",
+                "title": "Create a diary in subdir"
             },
             {
                 "command": "extension.InsertDateTime",
@@ -47,5 +52,3 @@
         "@types/mocha": "^2.2.42"
     }
 }
-
-
